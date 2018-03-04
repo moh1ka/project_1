@@ -77,6 +77,7 @@ DSK6713_AIC23_CodecHandle H_Codec;
 float *input;
 float *intermediate;
 float *output;
+float *mag;
 volatile int index = 0; 
  
 
@@ -86,7 +87,8 @@ void init_HWI(void);
 void ISR_AIC(void);
 void init_arrays(void);
 void wait_buffer(void); 
-                       
+complex dft(int len, complex* x);
+complex idft(int len, complex* x)
 /********************************** Main routine ************************************/
 void main()
 {      
@@ -150,8 +152,10 @@ void init_HWI(void)
 void init_arrays(void)
 {
 	input        = (float *) calloc(BUFLEN, sizeof(float)); /* Input array */
-    output       = (float *) calloc(BUFLEN, sizeof(float)); /* Output array */
-    intermediate = (float *) calloc(BUFLEN, sizeof(float)); /* Array for processing*/
+ 	output       = (float *) calloc(BUFLEN, sizeof(float)); /* Output array */
+    	intermediate = (float *) calloc(BUFLEN, sizeof(float)); /* Array for processing*/
+	mag	     = (float *) calloc(BUFLEN, sizeof(float)); /* Array for processing*/
+	
 }
 
 /*************************** INTERRUPT SERVICE ROUTINE  ******************************/
@@ -181,6 +185,8 @@ void ISR_AIC(void)
 void wait_buffer(void)
 {
 	float *p;  
+	float *c;
+	int i;
 
 	/* wait for array index to be set to zero by ISR */
 	while(index);
@@ -191,11 +197,51 @@ void wait_buffer(void)
 	output = intermediate;
 	intermediate = p;
 	
-	/************************* DO PROCESSING OF FRAME  HERE **************************/                
-
-
-								/*please add your code */	    
-
+	/************************* DO PROCESSING OF FRAME  HERE **************************/ 
+	//---------EX_2---------------------------------
+	c = (complex *) calloc(BUFLEN, sizeof(complex)); /* Array for processing*/
+	//copy intermediate into complex valued array c
+	for(i=0; i<BUFLEN; i++)
+	{
+		c[i].r = intermediate[i];
+		//c[i].i = 0.0;
+	}
+	
+	fft(BUFLEN, c);
+	
+	//calculate magnitude
+	for(i=0; i<BUFLEN; i++)
+	{
+		mag[i] = cabs(c[i]);
+	}
+	
+	ifft(BUFLEN, c);
+	
+	for(i=0; i<BUFLEN; i++)
+	{
+		intermediate[i] = c[i].r;
+	}
+	
+	free(c);
+	
+	//-------------EX_3--------------------------
+	/*
+	dft(BUFLEN, c);
+	
+	for(i=0; i<BUFLEN; i++)
+	{
+		mag[i] = cabs(c[i]);
+	}
+	
+	idft(BUFLEN, c);
+	
+	for(i=0; i<BUFLEN; i++)
+	{
+		intermediate[i] = c[i].r;
+	}
+	
+	free(c);
+	*/
 
 	/**********************************************************************************/
 	
@@ -203,5 +249,56 @@ void wait_buffer(void)
 	while(!index);
 }        
 
+
+complex dft(int len, complex* x)
+{
+	int k,n;
+	dftbuf = (complex *) calloc(len, sizeof(complex));
+	for( k=0; k<len ; k++)
+	{
+		for(n=0; i<len; n++)
+		{
+			dftbuf[k] = cadd(dftbuf[k] , rmul(x[n].r , cexp( 0, (-2*PI*k*n)/len) )));
+		}
+	}
+	
+	/*
+	for(n=0; n<len; n++)
+	{
+		x[n] = dftbuf[n];
+		dftbuf[n] = cmplx(0,0);//if do then need to initilaise dftbuf outside function
+	}
+	
+	memcpy(x, dftbuf, len*sizeof(complex) );
+	free(dftbuff);
+	*/
+	
+}
+			
+complex idft(int len, complex* x)
+{
+	int k,n;
+	idftbuf = (complex *) calloc(len, sizeof(complex));
+	for( k=0; k<len ; k++)
+	{
+		for(n=0; i<len; n++)
+		{
+			idftbuf[k] = cadd(dftbuf[k] , rmul(x[n].r , cexp( 0, (-2*PI*k*n)/len) )));
+		}
+	}
+	
+	/*
+	for(n=0; n<len; n++)
+	{
+		x[n] = dftbuf[n];
+		dftbuf[n] = cmplx(0,0);//if do then need to initilaise dftbuf outside function
+	}
+	
+	memcpy(x, dftbuf, len*sizeof(complex) );
+	free(dftbuff);
+	*/	
+}
+	
+	
 
 
