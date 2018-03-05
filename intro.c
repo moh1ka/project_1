@@ -70,7 +70,7 @@ DSK6713_AIC23_CodecHandle H_Codec;
 // PI defined here for use in your code 
 #define PI 3.141592653589793
 
-#define BUFLEN 64  /* Frame buffer length must be even for real fft */
+#define BUFLEN 128  /* Frame buffer length must be even for real fft */
 
 
 /* Pointers to data buffers */                        
@@ -196,7 +196,7 @@ void wait_buffer(void)
 	intermediate = p;
 	
 	/************************* DO PROCESSING OF FRAME  HERE **************************/                
-//--------EX_2-----------------------------------
+	//--------EX_2-----------------------------------
 
 	c = (complex *) calloc(BUFLEN, sizeof(complex)); /* Array for processing*/
 	//copy intermediate into complex valued array c
@@ -206,27 +206,6 @@ void wait_buffer(void)
 		//c[i].i = 0.0;
 	}
 	
-	//comment out from here for ex3
-	/*
-	 * fft(BUFLEN, c);
-	
-	
-	//calculate magnitude
-	for(i=0; i<BUFLEN; i++)
-	{
-		mag[i] = cabs(c[i]);
-	}
-	
-	ifft(BUFLEN, c);
-	
-	//copy into intermediate
-	for(i=0; i<BUFLEN; i++)
-	{
-		intermediate[i] = c[i].r;
-	}
-	
-	free(c);
-	*/
 //------------EX_3--------------------------------------------------------------
 	dft123(BUFLEN, c);
 	
@@ -234,14 +213,14 @@ void wait_buffer(void)
 	{
 		mag[i] = cabs(c[i]);
 	}
-/*	
+
 	idft123(BUFLEN, c);
 	
 	for(i=0; i<BUFLEN; i++)
 	{
 		intermediate[i] = c[i].r;
 	}
-*/	
+
 	free(c);
 
 	/**********************************************************************************/
@@ -265,11 +244,10 @@ void dft123(int len, complex* x)
 		}
 	}
 	
-	
 	for(n=0; n<len; n++)
 	{
 		x[n] = dftbuf[n];
-		dftbuf[n] = cmplx(0,0);//if do then need to initilaise dftbuf outside function
+		//dftbuf[n] = cmplx(0,0);//if do then need to initilaise dftbuf outside function
 	}
 	
 	
@@ -290,17 +268,17 @@ void idft123(int len, complex* x)
 		{
 			idftbuf[k] = cadd(idftbuf[k] , rmul(x[n].r , cexp(cmplx(0, (2*PI*k*n)/len) ) ) );
 		}
+		idftbuf[k] = rdiv(idftbuf[k],(float)len);
 	}
 	
 	
 	for(n=0; n<len; n++)
 	{
 		x[n] = idftbuf[n];
-		idftbuf[n] = cmplx(0,0);//if do then need to initilaise dftbuf outside function
+		//idftbuf[n] = cmplx(0,0);//if do then need to initilaise dftbuf outside function
 	}
 	
 	
 	//memcpy(x, idftbuf, len*sizeof(complex) );
 	free(idftbuf);	
 }
-
